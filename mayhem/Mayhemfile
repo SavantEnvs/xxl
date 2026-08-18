@@ -1,0 +1,21 @@
+project: savantenvs/xxl
+target: xxl
+
+# File-input (CLI) target: the XXL interpreter parses+evaluates the input file — main() -> args()
+# -> evalfile() -> parsestr()/evalin() — then exits (stdout is not a tty under Mayhem), so the
+# binary is also its own single-input reproducer. Built single-threaded (see mayhem/build.sh).
+# Interpreters can loop forever (XXL's language-level `exhaust`/`recurse` self-limit to a 2048-step
+# internal check, but plain self-recursive lambdas do NOT — verified empirically, see
+# mayhem/watchdog_main.c), so the fuzz binary carries a hard ~1.5s alarm()/SIGALRM watchdog that
+# _exit()s the process regardless of what the interpreter is doing; a raw process-per-input target
+# (no libfuzzer:) is the correct shape here (like checkouts/cc65), not an in-process libFuzzer harness,
+# both because upstream itself is not libFuzzer-instrumented at the API level and because each hung
+# input this way costs only the watchdog's ~1.5s, not the whole campaign.
+# Seeds use the sanctioned two-entry form: the accumulating server tar plus the committed clean
+# XXL programs under mayhem/xxl/testsuite. detect_leaks=0 is baked via __asan_default_options
+# (mayhem/asan_default_options.c) because this allocate-and-exit VM never frees its workspace.
+cmds:
+  - cmd: /mayhem/xxl @@
+testsuite:
+  - https://$MAYHEM_DOMAIN/$MAYHEM_PROJECT/$MAYHEM_TARGET/testsuite.tar
+  - file://mayhem/xxl/testsuite

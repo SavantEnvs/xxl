@@ -1,0 +1,8 @@
+{
+	x as 'n; self as 'fib;
+	n show;
+	n<3 ifelse [1,{n as 'nn; nn-1 fib + (nn-2 fib)}]
+} as 'fib
+
+
+

@@ -1,0 +1,13 @@
+// not yet working
+// {y as x} as 'is;
+{
+	x as 'm -1 as 'mm; y as 'n -1 as 'nn;
+	// ['ack,m,n] show;
+	self as 'me;
+	m=0 ifelse( (n+1),{
+		n=0 ifelse (
+			{mm me 1},
+			{m me nn as 'o; mm me o}
+		)} )
+} as 'ack
+
