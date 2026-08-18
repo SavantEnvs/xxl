@@ -1,0 +1,22 @@
+project: savantenvs/xxl
+target: xxl
+
+# File-input (CLI) target: the XXL interpreter parses+evaluates the input file — main() -> args()
+# -> evalfile() -> parsestr()/evalin() — then exits (stdout is not a tty under Mayhem), so the
+# binary is also its own single-input reproducer. Built single-threaded (see mayhem/build.sh).
+# Interpreters can loop forever (XXL's language-level `exhaust`/`recurse` self-limit to a 2048-step
+# internal check, but plain self-recursive lambdas do NOT — verified empirically, see
+# mayhem/build.sh). This is a raw process-per-input target (no libfuzzer:, like checkouts/cc65):
+# each input is its own short-lived process, so a hanging input is bounded by Mayhem's per-test
+# `timeout:` below (seconds; set explicitly because Mayhem's 2 s default is too tight for its traced
+# runs), which kills that one execution only. The binary carries no timer of its own (issue #1298).
+# Seeds use the sanctioned two-entry form: the accumulating server tar plus the committed clean
+# XXL programs under mayhem/xxl/testsuite. LeakSanitizer is turned off at build time by
+# mayhem/lsan_off.c (__lsan_is_turned_off) because this allocate-and-exit VM never frees its
+# workspace; ASan/UBSan stay on.
+cmds:
+  - cmd: /mayhem/xxl @@
+    timeout: 5
+testsuite:
+  - https://$MAYHEM_DOMAIN/$MAYHEM_PROJECT/$MAYHEM_TARGET/testsuite.tar
+  - file://mayhem/xxl/testsuite
